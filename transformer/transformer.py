@@ -72,7 +72,6 @@ class ScaledDotProductAttention(nn.Module):
 
     def forward(self, Q, K, V, attn_mask):
         scores = torch.matmul(Q, K.transpose(-1, -2)) / np.sqrt(d_k) # scores : [batch_size x n_heads x len_q(=len_k) x len_k(=len_q)]
-        
         scores.masked_fill_(attn_mask, -1e9) # Fills elements of self tensor with value where mask is
         # one.#把评分进行mask修正,
         # 修改为负无穷,softmax之后得到的attention是0,表示不对这个位置进行学习.不关心这个位置.attn:1,8,5,5
@@ -139,6 +138,8 @@ class DecoderLayer(nn.Module):
     def forward(self, dec_inputs, enc_outputs, dec_self_attn_mask, dec_enc_attn_mask):
         dec_outputs, dec_self_attn = self.dec_self_attn(dec_inputs, dec_inputs, dec_inputs, dec_self_attn_mask)
         dec_outputs, dec_enc_attn = self.dec_enc_attn(dec_outputs, enc_outputs, enc_outputs, dec_enc_attn_mask)
+
+
 
         dec_outputs = self.pos_ffn(dec_outputs)
         return dec_outputs, dec_self_attn, dec_enc_attn
@@ -220,16 +221,16 @@ for epoch in range(20):
     loss.backward()
     optimizer.step()
 
-# # Test
-# predict, _, _, _ = model(enc_inputs, dec_inputs)
-# predict = predict.data.max(1, keepdim=True)[1]
-# print(sentences[0], '->', [number_dict[n.item()] for n in predict.squeeze()])
+predict, _, _, _ = model(enc_inputs, dec_inputs)
+predict = predict.data.max(1, keepdim=True)[1]
+print(sentences[0], '->', [number_dict[n.item()] for n in predict.squeeze()])
 
-# print('first head of last state enc_self_attns')
-# showgraph(enc_self_attns)
+print('first head of last state enc_self_attns')
+showgraph(enc_self_attns)
 
-# print('first head of last state dec_self_attns')
-# showgraph(dec_self_attns)
+print('first head of last state dec_self_attns')
+showgraph(dec_self_attns)
 
-# print('first head of last state dec_enc_attns')
-# showgraph(dec_enc_attns)
+print('first head of last state dec_enc_attns')
+showgraph(dec_enc_attns)
+
